@@ -1,1 +1,34 @@
 tens3 : simple s3 backup scripts
+
+* uses s3 to backup a directory of files
+* uses fadvise to be easy on filesystem caches
+* purges files after X days
+
+
+configuration:
+
+tens3.conf:
+
+amazon_access_key_id: "someid"
+amazon_secret_access_key: "somekey"
+backup_dir: "/some/path/"
+purge_threshold: 3
+bucket_name: "somebucket"
+
+
+usage:
+
+backup a directory of files:
+
+$ ./tens3_put tens3.conf
+
+restore a file from a backup:
+
+$ ./tens3_get tens3.conf date somefile ./somefile
+
+The date is the date that the file was backed up in a YYYYMMDD format.
+
+
+caveats:
+
+The script will only backup files at one directory level, it does not recurse into subdirectories.

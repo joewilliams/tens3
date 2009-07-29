@@ -57,7 +57,7 @@ def purge
 
   purge_list.each do |key, value|
     time_diff = (today - Time.parse(value))/seconds_in_day
-    if time_diff > PURGE_THRESHOLD.to_i
+    if time_diff > PURGE_THRESHOLD
       puts "[ #{Time.now} ] INFO :: #{key} is #{time_diff} days old (>#{PURGE_THRESHOLD}), purging from s3"
       S3.delete(BUCKET_NAME, key)
     end
