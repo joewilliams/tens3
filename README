@@ -1,10 +1,21 @@
-tens3 : simple s3 backup scripts
+tens3 : dead simple s3 backups
 
 * uses s3 to backup a directory of files
 * uses fadvise to be easy on filesystem caches
 * purges files after X days
+* streams files rather than loading them entirely into memory
+
+
+license:
 
 This code is available as Open Source Software under the MIT license.
+
+
+ruby dependencies:
+
+fadvise
+right_aws
+
 
 configuration:
 
