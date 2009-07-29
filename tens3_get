@@ -1,0 +1,36 @@
+#! /usr/bin/ruby
+
+require 'rubygems'
+require 'right_aws'
+require 'socket'
+require 'fadvise'
+
+tens3_config = YAML.load(File.open(ARGV[0]))
+
+AWS_KEY = tens3_config['amazon_access_key_id']
+AWS_SECRET = tens3_config['amazon_secret_access_key']
+BUCKET_NAME = tens3_config['bucket_name']
+
+S3 = RightAws::S3Interface.new(AWS_KEY, AWS_SECRET)
+def main
+  if ARGV.length != 4
+    puts "tens3_get usage:\n# tens3_get CONFIG BACKUPDATE REMOTEFILENAME LOCALFILEWITHPATH"
+  else
+    s3 = RightAws::S3Interface.new(AWS_KEY, AWS_SECRET)
+    remote_file_name = "#{ARGV[1]}_#{ARGV[2]}"
+    local_file_name = "#{ARGV[3]}"
+
+    puts "[ #{Time.now} ] IFNO :: Creating local file at #{local_file_name}"
+    file = File.open(local_file_name, File::CREAT|File::RDWR)
+    file.fadvise(0, 0, :dont_need)
+
+    puts "[ #{Time.now} ] INFO :: Streaming #{remote_file_name} from S3 to #{local_file_name}"
+    rhdr = s3.get(BUCKET_NAME, remote_file_name) do |chunk|
+      file.write(chunk)
+    end
+
+    file.close
+  end
+end
+
+main

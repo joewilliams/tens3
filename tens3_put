@@ -1,0 +1,77 @@
+#! /usr/bin/ruby
+
+require 'rubygems'
+require 'right_aws'
+require 'socket'
+require 'fadvise'
+require 'time'
+
+tens3_config = YAML.load(File.open(ARGV[0]))
+
+BACKUP_DIR = tens3_config['backup_dir']
+AWS_KEY = tens3_config['amazon_access_key_id']
+AWS_SECRET = tens3_config['amazon_secret_access_key']
+PURGE_THRESHOLD = tens3_config['purge_threshold']
+BUCKET_NAME = tens3_config['bucket_name']
+
+S3 = RightAws::S3Interface.new(AWS_KEY, AWS_SECRET)
+
+def file_list
+  ls = Dir.entries(BACKUP_DIR)
+  ls.delete(".")
+  ls.delete("..")
+  ls
+end
+
+def backup
+  puts "[ #{Time.now} ] INFO :: Creating bucket #{BUCKET_NAME}"
+  S3.create_bucket(BUCKET_NAME)
+
+  file_list.each do |file|
+    puts "[ #{Time.now} ]"
+    full_path = "#{BACKUP_DIR}#{file}"
+
+    backup_file = File.open(full_path, 'rb')
+    backup_file.fadvise(0, file.size, :sequential)
+
+    puts "[ #{Time.now} ] INFO :: Calculating SHA1 for #{full_path}"
+    sha1_output = `sha1sum #{full_path}`
+    sha1 = sha1_output.split[0]
+
+    puts "[ #{Time.now} ] INFO :: Backing up #{full_path} (#{File.size(full_path)} bytes) - #{sha1}"
+    S3.put(BUCKET_NAME, "#{Time.now.strftime("%Y%m%d")}_#{file}", backup_file)
+
+    puts "[ #{Time.now} ] INFO :: #{Time.now.strftime("%Y%m%d")}_#{file} has been uploaded to bucket #{BUCKET_NAME}"
+  end
+end
+
+def purge
+  today = Time.now
+  seconds_in_day = 86400
+  bucket_list = S3.list_bucket(BUCKET_NAME)
+  purge_list = Hash.new
+
+  bucket_list.each do |file|
+    purge_list.store(file[:key], file[:last_modified])
+  end
+
+  purge_list.each do |key, value|
+    time_diff = (today - Time.parse(value))/seconds_in_day
+    if time_diff > PURGE_THRESHOLD.to_i
+      puts "[ #{Time.now} ] INFO :: #{key} is #{time_diff} days old (>#{PURGE_THRESHOLD}), purging from s3"
+      S3.delete(BUCKET_NAME, key)
+    end
+  end
+
+end
+
+def main
+  if ARGV.length != 1
+    puts "tens3_put usage:\n# tens3_put CONFIG"
+  else
+    backup
+    purge
+  end
+end
+
+main
