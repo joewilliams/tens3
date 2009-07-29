@@ -1,7 +1,7 @@
 tens3 : dead simple s3 backups
 
 * uses s3 to backup a directory of files
-* uses fadvise to be easy on filesystem caches
+* uses fadvise to be easy on filesystem caches and disks
 * purges files after X days
 * streams files rather than loading them entirely into memory
 
