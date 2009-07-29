@@ -4,6 +4,7 @@ tens3 : simple s3 backup scripts
 * uses fadvise to be easy on filesystem caches
 * purges files after X days
 
+This code is available as Open Source Software under the MIT license.
 
 configuration:
 
