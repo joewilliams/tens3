@@ -29,6 +29,7 @@ require 'right_aws'
 require 'socket'
 require 'fadvise'
 require 'time'
+require 'ftools'
 
 tens3_config = YAML.load(File.open(ARGV[0]))
 
@@ -55,17 +56,19 @@ def backup
     puts "[ #{Time.now} ]"
     full_path = "#{BACKUP_DIR}#{file}"
 
-    backup_file = File.open(full_path, 'rb')
-    backup_file.fadvise(0, file.size, :sequential)
+    unless File.directory?(full_path)
+      backup_file = File.open(full_path, 'rb')
+      backup_file.fadvise(0, file.size, :sequential)
 
-    puts "[ #{Time.now} ] INFO :: Calculating SHA1 for #{full_path}"
-    sha1_output = `sha1sum #{full_path}`
-    sha1 = sha1_output.split[0]
+      puts "[ #{Time.now} ] INFO :: Calculating SHA1 for #{full_path}"
+      sha1_output = `sha1sum #{full_path}`
+      sha1 = sha1_output.split[0]
 
-    puts "[ #{Time.now} ] INFO :: Backing up #{full_path} (#{File.size(full_path)} bytes) - #{sha1}"
-    S3.put(BUCKET_NAME, "#{Time.now.strftime("%Y%m%d")}_#{file}", backup_file)
+      puts "[ #{Time.now} ] INFO :: Backing up #{full_path} (#{File.size(full_path)} bytes) - #{sha1}"
+      S3.put(BUCKET_NAME, "#{Time.now.strftime("%Y%m%d")}_#{file}", backup_file)
 
-    puts "[ #{Time.now} ] INFO :: #{Time.now.strftime("%Y%m%d")}_#{file} has been uploaded to bucket #{BUCKET_NAME}"
+      puts "[ #{Time.now} ] INFO :: #{Time.now.strftime("%Y%m%d")}_#{file} has been uploaded to bucket #{BUCKET_NAME}"
+    end
   end
 end
 
