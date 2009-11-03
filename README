@@ -19,7 +19,7 @@ right_aws
 
 configuration:
 
-tens3.conf:
+tens3.yml:
 
 amazon_access_key_id: "someid"
 amazon_secret_access_key: "somekey"
